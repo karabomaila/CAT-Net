@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.parameter import Parameter
-from torchvision_backbones import TVDeeplabRes101Encoder
+from  models.torchvision_backbones import TVDeeplabRes101Encoder
 
 
 class FewShotSeg(nn.Module):
@@ -338,7 +338,7 @@ class SelfAttention(nn.Module):
             nn.Linear(dim, dim),
             nn.ReLU(),
             nn.Linear(dim, dim))
-        self.norm = nn.LayerNorm([256, 32, 32]])
+        self.norm = nn.LayerNorm([256, 32, 32])
 
     def forward(self, x):
         B, C, H, W = x.shape
