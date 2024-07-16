@@ -31,8 +31,8 @@ do
   then
     mkdir -p $LOGDIR
   fi
-  cd D:/CV/Q-Net-main
-  python train.py with \
+  pwd
+  .venv/bin/python  train_main.py with \
   mode='train' \
   dataset=$DATASET \
   num_workers=$NWORKER \
