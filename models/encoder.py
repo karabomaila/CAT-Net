@@ -1,6 +1,7 @@
 """
 Backbones supported by torchvison.
 """
+
 import torch
 import torch.nn as nn
 import torchvision
@@ -12,20 +13,25 @@ class Res101Encoder(nn.Module):
     modify the 'downsample' component in layer2 and/or layer3 and/or layer4 as the vanilla Resnet
     """
 
-    def __init__(self, replace_stride_with_dilation=None, pretrained_weights='resnet101'):
+    def __init__(
+        self, replace_stride_with_dilation=None, pretrained_weights="resnet101"
+    ):
         super().__init__()
         # using pretrained model's weights
-        if pretrained_weights == 'deeplabv3':
+        if pretrained_weights == "deeplabv3":
             self.pretrained_weights = torch.load(
-                "./deeplabv3_resnet101_coco-586e9e4e.pth", map_location='cpu')
-        elif pretrained_weights == 'resnet101':
-            self.pretrained_weights = torch.load("./model1/resnet101-63fe2227.pth",
-                                                 map_location='cpu')
+                "./deeplabv3_resnet101_coco-586e9e4e.pth", map_location="cpu"
+            )
+        elif pretrained_weights == "resnet101":
+            self.pretrained_weights = torch.load(
+                "./model1/resnet101-63fe2227.pth", map_location="cpu"
+            )
         else:
             self.pretrained_weights = pretrained_weights
 
-        _model = torchvision.models.resnet.resnet101(pretrained=False,
-                                                     replace_stride_with_dilation=replace_stride_with_dilation)
+        _model = torchvision.models.resnet.resnet101(
+            pretrained=False, replace_stride_with_dilation=replace_stride_with_dilation
+        )
         self.backbone = nn.ModuleDict()
         for dic, m in _model.named_children():
             self.backbone[dic] = m
@@ -46,10 +52,10 @@ class Res101Encoder(nn.Module):
         x = self.backbone["layer1"](x)
         x = self.backbone["layer2"](x)
         x = self.backbone["layer3"](x)
-        features['down2'] = self.reduce1(x)
+        features["down2"] = self.reduce1(x)
         x = self.backbone["layer4"](x)
-        features['down3'] = self.reduce2(x)
-        
+        features["down3"] = self.reduce2(x)
+
         # feature map -> avgpool -> fc -> single value
         t = self.backbone["avgpool"](x)
         t = torch.flatten(t, 1)
@@ -60,7 +66,7 @@ class Res101Encoder(nn.Module):
     def _init_weights(self):
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+                nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
