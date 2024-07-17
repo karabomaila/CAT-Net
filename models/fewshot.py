@@ -175,7 +175,7 @@ class FewShotSeg(nn.Module):
         qry_fts1 = qry_fts_out.view(*qry_fts.shape)
 
         ###### Compute loss ######
-        align_loss = torch.zeros(1).to(self.device)
+        align_loss = torch.zeros(1)
         outputs = []
         for epi in range(batch_size):
             ###### Extract prototypes ######
@@ -397,7 +397,7 @@ class FewShotSeg(nn.Module):
         )  # (1 + Wa) x C
 
         # Compute the support loss
-        loss = torch.zeros(1).to(self.device)
+        loss = torch.zeros(1)
         for way in range(n_ways):
             if way in skip_ways:
                 continue

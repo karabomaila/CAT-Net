@@ -116,19 +116,17 @@ def main(_run, _config, _log):
         for _, sample in enumerate(train_loader):
             # Prepare episode data.
             support_images = [
-                [shot.float().cuda() for shot in way]
-                for way in sample["support_images"]
+                [shot.float() for shot in way] for way in sample["support_images"]
             ]
             support_fg_mask = [
-                [shot.float().cuda() for shot in way]
-                for way in sample["support_fg_labels"]
+                [shot.float() for shot in way] for way in sample["support_fg_labels"]
             ]
 
             query_images = [
-                query_image.float().cuda() for query_image in sample["query_images"]
+                query_image.float() for query_image in sample["query_images"]
             ]
             query_labels = torch.cat(
-                [query_label.long().cuda() for query_label in sample["query_labels"]],
+                [query_label.long() for query_label in sample["query_labels"]],
                 dim=0,
             )
 
