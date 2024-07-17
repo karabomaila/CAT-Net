@@ -26,7 +26,7 @@ class TestDataset(Dataset):
             )
         elif args["dataset"] == "CHAOST2":
             self.image_dirs = glob.glob(
-                os.path.join(args["data_dir"], "chaos_MR_T2_normalized/image*")
+                os.path.join(args["data_dir"], "normalized/image*")
             )
         elif args["dataset"] == "SABS":
             self.image_dirs = glob.glob(
