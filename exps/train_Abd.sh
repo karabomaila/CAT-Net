@@ -8,9 +8,9 @@ DATASET='CHAOST2'
 NWORKER=0
 RUNS=1
 ALL_EV=(2) # 5-fold cross validation (0, 1, 2, 3, 4)
-TEST_LABEL=[1,2,3,4]
+TEST_LABEL=[1, 4]
 EXCLUDE_LABEL=None
-USE_GT=False
+USE_GT=True
 ###### Training configs ######
 NSTEP=100000
 DECAY=0.98

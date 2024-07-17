@@ -201,18 +201,16 @@ class TrainDataset(Dataset):
             self.images = {}
             self.labels = {}
             self.sprvxls = {}
-            for image_dir, label_dir, sprvxl_dir in zip(
-                self.image_dirs, self.label_dirs, self.sprvxl_dirs
-            ):
+            for image_dir, label_dir in zip(self.image_dirs, self.label_dirs):
                 self.images[image_dir] = sitk.GetArrayFromImage(
                     sitk.ReadImage(image_dir)
                 )
                 self.labels[label_dir] = sitk.GetArrayFromImage(
                     sitk.ReadImage(label_dir)
                 )
-                self.sprvxls[sprvxl_dir] = sitk.GetArrayFromImage(
-                    sitk.ReadImage(sprvxl_dir)
-                )
+                # self.sprvxls[sprvxl_dir] = sitk.GetArrayFromImage(
+                #     sitk.ReadImage(sprvxl_dir)
+                # )
 
     def __len__(self):
         return self.max_iter
@@ -274,9 +272,9 @@ class TrainDataset(Dataset):
             # get image/supervoxel volume from dictionary
             img = self.images[self.image_dirs[pat_idx]]
             gt = self.labels[self.label_dirs[pat_idx]]
-            sprvxl = self.sprvxls[self.sprvxl_dirs[pat_idx]]
+            # sprvxl = self.sprvxls[self.sprvxl_dirs[pat_idx]]
             padding_mask_gt = np.zeros_like(gt)
-            padding_mask_gt_sprvxl = np.zeros_like(sprvxl)
+            # padding_mask_gt_sprvxl = np.zeros_like(sprvxl)
         else:
             # read image/supervoxel volume into memory
             img = sitk.GetArrayFromImage(sitk.ReadImage(self.image_dirs[pat_idx]))
@@ -302,8 +300,8 @@ class TrainDataset(Dataset):
         # chose training label
         if self.use_gt:
             lbl = gt.copy()
-        else:
-            lbl = sprvxl.copy()
+        # else:
+        #     lbl = sprvxl.copy()
 
         # sample class(es) (gt/supervoxel)
         unique = list(np.unique(lbl))
@@ -397,5 +395,5 @@ class TrainDataset(Dataset):
             "padding_mask": padding_mask,
             "s_padding_mask": s_padding_mask,
         }
-
-        return sup_img, sup_lbl, qry_img, qry_lbl, padding_mask, s_padding_mask
+        return sample
+        # return sup_img, sup_lbl, qry_img, qry_lbl, padding_mask, s_padding_mask
