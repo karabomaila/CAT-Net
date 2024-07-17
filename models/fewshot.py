@@ -1,9 +1,13 @@
+import ssl
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.parameter import Parameter
 
 from models.torchvision_backbones import TVDeeplabRes101Encoder
+
+ssl._create_default_https_context = ssl._create_unverified_context
 
 
 class FewShotSeg(nn.Module):
@@ -483,7 +487,7 @@ class CrossAttention(nn.Module):
         self.value = nn.Conv2d(dim, dim, 1)
         self.softmax = nn.Softmax(dim=-1)
         self.mlp = nn.Sequential(nn.Linear(dim, dim), nn.ReLU(), nn.Linear(dim, dim))
-        self.norm = nn.LayerNorm([[256, 32, 32]])
+        self.norm = nn.LayerNorm([256, 32, 32])
 
     def forward(self, x, y):
         B, C, H, W = x.shape
