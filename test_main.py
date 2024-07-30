@@ -50,19 +50,19 @@ def main(_run, _config, _log):
         cudnn.deterministic = True
 
     # Enable cuDNN benchmark mode to select the fastest convolution algorithm.
-    cudnn.enabled = True
-    cudnn.benchmark = True
-    torch.cuda.set_device(device=_config["gpu_id"])
+    # cudnn.enabled = True
+    # cudnn.benchmark = True
+    # torch.cuda.set_device(device=_config["gpu_id"])
     torch.set_num_threads(1)
 
     _log.info("Create model...")
-    model = FewShotSeg(alpha=_config["alpha"])
-    model.cuda()
+    model = FewShotSeg()
+    # model.cuda()
     model.load_state_dict(torch.load(_config["reload_model_path"], map_location="cpu"))
 
     _log.info("Load data...")
     data_config = {
-        "data_dir": _config["path"][_config["dataset"]]["data_dir"],
+        "data_dir": "./data/CHAOST2/niis/T2SPIR",
         "dataset": _config["dataset"],
         "n_shot": _config["n_shot"],
         "n_way": _config["n_way"],
@@ -96,7 +96,7 @@ def main(_run, _config, _log):
         # Skip BG class.
         if label_name == "BG":
             continue
-        elif not np.intersect1d([label_val], _config["test_label"]):
+        elif not np.intersect1d([label_val], _config["test_label"]).size:
             continue
 
         _log.info(f"Test Class: {label_name}")
@@ -113,11 +113,11 @@ def main(_run, _config, _log):
 
             # Unpack support data.
             support_image = [
-                support_sample["image"][[i]].float().cuda()
+                support_sample["image"][[i]].float()
                 for i in range(support_sample["image"].shape[0])
             ]  # n_shot x 3 x H x W
             support_fg_mask = [
-                support_sample["label"][[i]].float().cuda()
+                support_sample["label"][[i]].float()
                 for i in range(support_sample["image"].shape[0])
             ]  # n_shot x H x W
 
@@ -126,8 +126,7 @@ def main(_run, _config, _log):
             for i, sample in enumerate(test_loader):
                 # Unpack query data.
                 query_image = [
-                    sample["image"][i].float().cuda()
-                    for i in range(sample["image"].shape[0])
+                    sample["image"][i].float() for i in range(sample["image"].shape[0])
                 ]  # [C x 3 x H x W]
                 query_label = sample["label"].long()  # C x H x W
                 query_id = sample["id"][0].split("image_")[1][: -len(".nii.gz")]
