@@ -5,11 +5,10 @@ export CUDA_VISIBLE_DEVICES=$GPUID1
 
 ###### Shared configs ######
 DATASET='CHAOST2'
-#DATASET='CMR'
 NWORKER=0
 RUNS=1
 ALL_EV=(0 1 2 3 4) # 5-fold cross validation (0, 1, 2, 3, 4)
-TEST_LABEL=[1,2,3,4]
+TEST_LABEL=[1,4]
 ###### Training configs ######
 NSTEP=30000
 DECAY=0.98
@@ -35,9 +34,9 @@ do
   for SUPP_IDX in "${ALL_SUPP[@]}"
   do
     # RELOAD_PATH='please feed the absolute path to the trained weights here' # path to the reloaded model
-    RELOAD_MODEL_PATH="./exps_on_CHAOST2/CATNet_train_CHAOST2_cv${EVAL_FOLD}/1/snapshots/100000.pth"
-    cd D:/CV/Q-Net-main
-    python test.py with \
+    # RELOAD_MODEL_PATH="./exps_on_CHAOST2/CATNet_train_CHAOST2_cv${EVAL_FOLD}/1/snapshots/100000.pth"
+    RELOAD_MODEL_PATH="./exps_on_CHAOST2/CATNet_train_CHAOST2_cv2/27/snapshots/600.pth"
+    .venv/bin/python test_main.py with \
     mode="test" \
     dataset=$DATASET \
     num_workers=$NWORKER \
