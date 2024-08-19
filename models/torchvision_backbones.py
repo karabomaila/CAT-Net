@@ -1,5 +1,6 @@
 import torch.nn as nn
 import torchvision
+from torchvision.models.segmentation import DeepLabV3_ResNet101_Weights
 
 
 class TVDeeplabRes101Encoder(nn.Module):
@@ -8,17 +9,24 @@ class TVDeeplabRes101Encoder(nn.Module):
     No ASPP is used as we found emperically it hurts performance
     """
 
-    def __init__(self, use_coco_init, aux_dim_keep=64, use_aspp=False):
+    def __init__(self, use_coco_init, log, aux_dim_keep=64, use_aspp=False):
         super().__init__()
         _model = torchvision.models.segmentation.deeplabv3_resnet101(
-            pretrained=use_coco_init, progress=True, num_classes=21, aux_loss=None
+            weights=DeepLabV3_ResNet101_Weights.DEFAULT,
+            progress=True,
+            num_classes=21,
+            aux_loss=None,
         )
         if use_coco_init:
             print("###### NETWORK: Using ms-coco initialization ######")
 
         _model_list = list(_model.children())
+        # print(_model_list)
         self.aux_dim_keep = aux_dim_keep
         self.backbone = _model_list[0]
+        # print()
+        # print(self.backbone)
+        # log.info(self.backbone)
         self.localconv = nn.Conv2d(
             2048, 256, kernel_size=1, stride=1, bias=False
         )  # reduce feature map dimension
@@ -35,6 +43,7 @@ class TVDeeplabRes101Encoder(nn.Module):
             low_level: whether returning aggregated low-level features in FCN
         """
         fts = self.backbone(x_in)
+
         if self.use_aspp:
             fts256 = self.aspp_out(fts["out"])
             high_level_fts = fts256
