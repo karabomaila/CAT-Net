@@ -12,11 +12,11 @@ TEST_LABEL=[1, 4]
 EXCLUDE_LABEL=None
 USE_GT=True
 ###### Training configs ######
-NSTEP=100000
+NSTEP=10000
 DECAY=0.98
 
 MAX_ITER=1000 # defines the size of an epoch
-SNAPSHOT_INTERVAL=100 # interval for saving snapshot
+SNAPSHOT_INTERVAL=1000 # interval for saving snapshot
 SEED=2021
 
 echo ========================================================================

@@ -25,6 +25,7 @@ class FewShotSeg(nn.Module):
         self.criterion = nn.NLLLoss()
         self.self_attention = SelfAttention(256)
         self.cross_attention = CrossAttention(256)
+        self.cross_attention2 = CrossAttention2(256)
         self.high_avg_pool = nn.AdaptiveAvgPool1d(256)
         self.conv_fusion = nn.Conv2d(256 + 1, 256, kernel_size=1)
 
@@ -130,11 +131,17 @@ class FewShotSeg(nn.Module):
         qry_fts_reshaped = qry_fts.view(-1, *qry_fts.shape[-3:])  # (N*B) x C x H' x W'
 
         # Self attention
-        supp_fts_reshaped = self.self_attention(supp_fts_reshaped)
-        qry_fts_reshaped = self.self_attention(qry_fts_reshaped)
+        # supp_fts_reshaped = self.self_attention(supp_fts_reshaped)
+        # qry_fts_reshaped = self.self_attention(qry_fts_reshaped)
+
+        supp_fts_reshaped, qry_fts_reshaped = self.cross_attention2(
+            supp_fts_reshaped, qry_fts_reshaped
+        )
 
         # Reshape back to original size
-        # supp_fts = supp_fts_reshaped.view(n_ways, self.n_shots, batch_size, -1, *fts_size)  # Wa x Sh x B x C x H' x W'
+        supp_fts = supp_fts_reshaped.view(
+            n_ways, self.n_shots, batch_size, -1, *fts_size
+        )  # Wa x Sh x B x C x H' x W'
         qry_fts = qry_fts_reshaped.view(
             n_queries, batch_size_q, -1, *fts_size
         )  # N x B x C x H' x W'
@@ -282,7 +289,6 @@ class FewShotSeg(nn.Module):
         )  # (t_loss_scaler * self.t_loss)
 
     def updatePrototype(self, fts, prototype, pred, update_iters, epi):
-        prototype_0 = torch.stack(prototype, dim=0)
         prototype_ = Parameter(torch.stack(prototype, dim=0))
 
         optimizer = torch.optim.Adam([prototype_], lr=0.01)
@@ -312,7 +318,6 @@ class FewShotSeg(nn.Module):
                 loss = bce_loss(fts_norm, new_fts_norm)
 
             optimizer.zero_grad()
-            # loss.requires_grad_()
             loss.backward()
             optimizer.step()
 
@@ -338,7 +343,6 @@ class FewShotSeg(nn.Module):
             prototype: prototype of one semantic class
                 expect shape: 1 x C
         """
-
         sim = -F.cosine_similarity(fts, prototype[..., None, None], dim=1) * self.scaler
 
         return sim
@@ -429,7 +433,7 @@ class FewShotSeg(nn.Module):
                     / n_shots
                     / n_ways
                 )
-
+        # print(loss)
         return loss
 
     def getPred(self, sim, thresh):
@@ -512,5 +516,45 @@ class CrossAttention(nn.Module):
             0, 3, 1, 2
         )  # Apply MLP and permute back
         outy = self.norm(outy)  # Apply normalization
+
+        return outx, outy
+
+
+class CrossAttention2(nn.Module):
+    def __init__(self, dim):
+        super(CrossAttention2, self).__init__()
+        self.query = nn.Conv2d(dim, dim // 8, 1)
+        self.key = nn.Conv2d(dim, dim // 8, 1)
+        self.value = nn.Conv2d(dim, dim, 1)
+        self.softmax = nn.Softmax(dim=-1)
+        self.mlp = nn.Sequential(nn.Linear(dim, dim), nn.ReLU(), nn.Linear(dim, dim))
+        self.norm = nn.LayerNorm([256, 32, 32])
+
+    def forward(self, x, y):
+        B, C, H, W = x.shape
+        scale = (C // 8) ** -0.5
+        # support
+        qx = self.query(x).view(B, -1, H * W).permute(0, 2, 1) * scale  # B, H*W, C'
+        ky = self.key(y).view(B, -1, H * W)  # B, C', H*W
+        vx = self.value(x).view(B, -1, H * W)  # B, C, H*W
+        attn = self.softmax(torch.bmm(qx, ky))  # B, H*W, H*W
+        outx = torch.bmm(vx, attn.permute(0, 2, 1)).view(B, C, H, W)  # B, C, H, W
+        # outx = self.mlp(outx.permute(0, 2, 3, 1)).permute(
+        #     0, 3, 1, 2
+        # )  # Apply MLP and permute back
+        outx = self.norm(outx)  # Apply normalization
+        outx = outx + x
+
+        # query
+        qy = self.query(y).view(B, -1, H * W).permute(0, 2, 1) * scale  # B, H*W, C'
+        kx = self.key(x).view(B, -1, H * W)  # B, C', H*W
+        vy = self.value(y).view(B, -1, H * W)  # B, C, H*W
+        attn = self.softmax(torch.bmm(qy, kx))  # B, H*W, H*W
+        outy = torch.bmm(vy, attn.permute(0, 2, 1)).view(B, C, H, W)  # B, C, H, W
+        # outy = self.mlp(outy.permute(0, 2, 3, 1)).permute(
+        #     0, 3, 1, 2
+        # )  # Apply MLP and permute back
+        outy = self.norm(outy)  # Apply normalization
+        outy = outy + y
 
         return outx, outy

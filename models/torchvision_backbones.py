@@ -9,7 +9,7 @@ class TVDeeplabRes101Encoder(nn.Module):
     No ASPP is used as we found emperically it hurts performance
     """
 
-    def __init__(self, use_coco_init, log, aux_dim_keep=64, use_aspp=False):
+    def __init__(self, use_coco_init, aux_dim_keep=64, use_aspp=False):
         super().__init__()
         _model = torchvision.models.segmentation.deeplabv3_resnet101(
             weights=DeepLabV3_ResNet101_Weights.DEFAULT,
