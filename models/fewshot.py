@@ -19,7 +19,7 @@ class FewShotSeg(nn.Module):
 
         # Encoder
         self.encoder = TVDeeplabRes101Encoder(use_coco_init)
-        self.device = torch.device("cuda")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.t = Parameter(torch.Tensor([-10.0]))
         self.scaler = 20.0
         self.criterion = nn.NLLLoss()
@@ -182,7 +182,7 @@ class FewShotSeg(nn.Module):
         qry_fts1 = qry_fts_out.view(*qry_fts.shape)
 
         ###### Compute loss ######
-        align_loss = torch.zeros(1)
+        align_loss = torch.zeros(1).to(self.device)
         outputs = []
         for epi in range(batch_size):
             ###### Extract prototypes ######
@@ -401,7 +401,7 @@ class FewShotSeg(nn.Module):
         )  # (1 + Wa) x C
 
         # Compute the support loss
-        loss = torch.zeros(1)
+        loss = torch.zeros(1).to(self.device)
         for way in range(n_ways):
             if way in skip_ways:
                 continue
