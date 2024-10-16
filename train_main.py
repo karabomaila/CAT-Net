@@ -59,10 +59,10 @@ def main(_run, _config, _log):
     # cudnn.benchmark = True
     # torch.cuda.set_device(device=_config["gpu_id"])
     torch.set_num_threads(1)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     _log.info("Create model...")
-    model = FewShotSeg()
-    # model = model.cuda()
+    model = FewShotSeg().to(device)
     model.train()
 
     _log.info("Set optimizer...")
@@ -75,7 +75,7 @@ def main(_run, _config, _log):
         optimizer, milestones=lr_milestones, gamma=_config["lr_step_gamma"]
     )
 
-    my_weight = torch.FloatTensor([0.1, 1.0])
+    my_weight = torch.FloatTensor([0.1, 1.0]).to(device)
     criterion = nn.NLLLoss(ignore_index=255, weight=my_weight)
 
     _log.info("Load data...")
@@ -112,21 +112,21 @@ def main(_run, _config, _log):
     i_iter = 0
     _log.info("Start training...")
     for sub_epoch in range(n_sub_epochs):
-        _log.info(f'This is epoch "{sub_epoch}" of "{n_sub_epochs}" epochs.')
+        _log.info(f'This is epoch "{sub_epoch + 1}" of "{n_sub_epochs}" epochs.')
         for _, sample in enumerate(train_loader):
             # Prepare episode data.
             support_images = [
-                [shot.float() for shot in way] for way in sample["support_images"]
+                [shot.float().to(device) for shot in way] for way in sample["support_images"]
             ]
             support_fg_mask = [
-                [shot.float() for shot in way] for way in sample["support_fg_labels"]
+                [shot.float().to(device) for shot in way] for way in sample["support_fg_labels"]
             ]
 
             query_images = [
-                query_image.float() for query_image in sample["query_images"]
+                query_image.float().to(device) for query_image in sample["query_images"]
             ]
             query_labels = torch.cat(
-                [query_label.long() for query_label in sample["query_labels"]],
+                [query_label.long().to(device) for query_label in sample["query_labels"]],
                 dim=0,
             )
 

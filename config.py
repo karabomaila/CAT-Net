@@ -59,7 +59,7 @@ def cfg():
     bg_wt = 0.1
     t_loss_scaler = 0.0
     ignore_label = 255
-    print_interval = 100
+    print_interval = 1000
     save_snapshot_every = 1000
     max_iters_per_load = 1000  # epoch size, interval for reloading the dataset
     alpha=0.9 # dual-scale
