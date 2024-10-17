@@ -111,22 +111,28 @@ def main(_run, _config, _log):
 
     i_iter = 0
     _log.info("Start training...")
+    _log.info(f"Running on the device: {device}")
     for sub_epoch in range(n_sub_epochs):
         _log.info(f'This is epoch "{sub_epoch + 1}" of "{n_sub_epochs}" epochs.')
         for _, sample in enumerate(train_loader):
             # Prepare episode data.
             support_images = [
-                [shot.float().to(device) for shot in way] for way in sample["support_images"]
+                [shot.float().to(device) for shot in way]
+                for way in sample["support_images"]
             ]
             support_fg_mask = [
-                [shot.float().to(device) for shot in way] for way in sample["support_fg_labels"]
+                [shot.float().to(device) for shot in way]
+                for way in sample["support_fg_labels"]
             ]
 
             query_images = [
                 query_image.float().to(device) for query_image in sample["query_images"]
             ]
             query_labels = torch.cat(
-                [query_label.long().to(device) for query_label in sample["query_labels"]],
+                [
+                    query_label.long().to(device)
+                    for query_label in sample["query_labels"]
+                ],
                 dim=0,
             )
 
