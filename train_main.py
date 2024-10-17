@@ -111,6 +111,7 @@ def main(_run, _config, _log):
 
     i_iter = 0
     _log.info("Start training...")
+    _log.info(f"Running on device: {device}")
     for sub_epoch in range(n_sub_epochs):
         _log.info(f'This is epoch "{sub_epoch}" of "{n_sub_epochs}" epochs.')
         for _, sample in enumerate(train_loader):
