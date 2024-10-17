@@ -137,6 +137,12 @@ class FewShotSeg(nn.Module):
         supp_fts_reshaped, qry_fts_reshaped = self.cross_attention2(
             supp_fts_reshaped, qry_fts_reshaped
         )
+        supp_fts_reshaped, qry_fts_reshaped = self.cross_attention2(
+            supp_fts_reshaped, qry_fts_reshaped
+        )
+        supp_fts_reshaped, qry_fts_reshaped = self.cross_attention2(
+            supp_fts_reshaped, qry_fts_reshaped
+        )
 
         # Reshape back to original size
         supp_fts = supp_fts_reshaped.view(
@@ -173,12 +179,10 @@ class FewShotSeg(nn.Module):
         qry_fts_reshaped = qry_fts.view(-1, *qry_fts.shape[2:])
 
         # Pass through CrossAttention
-        supp_fts_out, qry_fts_out = self.cross_attention(
-            supp_fts_reshaped, qry_fts_reshaped
-        )
+        _, qry_fts_out = self.cross_attention(supp_fts_reshaped, qry_fts_reshaped)
 
         # Reshape back to original shape
-        supp_fts1 = supp_fts_out.view(*supp_fts.shape)
+        # supp_fts1 = supp_fts_out.view(*supp_fts.shape)
         qry_fts1 = qry_fts_out.view(*qry_fts.shape)
 
         ###### Compute loss ######
