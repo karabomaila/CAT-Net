@@ -134,7 +134,9 @@ class FewShotSeg(nn.Module):
         qry_fts_reshaped = self.self_attention(qry_fts_reshaped)
 
         # Reshape back to original size
-        # supp_fts = supp_fts_reshaped.view(n_ways, self.n_shots, batch_size, -1, *fts_size)  # Wa x Sh x B x C x H' x W'
+        supp_fts = supp_fts_reshaped.view(
+            n_ways, self.n_shots, batch_size, -1, *fts_size
+        )  # Wa x Sh x B x C x H' x W'
         qry_fts = qry_fts_reshaped.view(
             n_queries, batch_size_q, -1, *fts_size
         )  # N x B x C x H' x W'
@@ -171,8 +173,8 @@ class FewShotSeg(nn.Module):
         )
 
         # Reshape back to original shape
-        supp_fts1 = supp_fts_out.view(*supp_fts.shape)
-        qry_fts1 = qry_fts_out.view(*qry_fts.shape)
+        supp_fts = supp_fts_out.view(*supp_fts.shape)
+        qry_fts = qry_fts_out.view(*qry_fts.shape)
 
         ###### Compute loss ######
         align_loss = torch.zeros(1).to(self.device)
@@ -201,7 +203,7 @@ class FewShotSeg(nn.Module):
             ###### Get predictions #######
             pred = self.getPred(anom_s, self.thresh_pred)  # N x Wa x H' x W'
 
-            qry_fts1 = [qry_fts1]
+            qry_fts1 = [qry_fts]
             fg_prototypes1 = [fg_prototypes]
             qry_prediction = [
                 torch.stack(
