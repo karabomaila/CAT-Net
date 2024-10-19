@@ -175,15 +175,15 @@ class FewShotSeg(nn.Module):
             n_queries, batch_size_q, -1, *fts_size
         )
 
-        supp_fts_reshaped = supp_fts.view(-1, *supp_fts.shape[3:])
-        qry_fts_reshaped = qry_fts.view(-1, *qry_fts.shape[2:])
+        # supp_fts_reshaped = supp_fts.view(-1, *supp_fts.shape[3:])
+        # qry_fts_reshaped = qry_fts.view(-1, *qry_fts.shape[2:])
 
         # Pass through CrossAttention
-        _, qry_fts_out = self.cross_attention(supp_fts_reshaped, qry_fts_reshaped)
+        # _, qry_fts_out = self.cross_attention(supp_fts_reshaped, qry_fts_reshaped)
 
         # Reshape back to original shape
-        # supp_fts1 = supp_fts_out.view(*supp_fts.shape)
-        qry_fts1 = qry_fts_out.view(*qry_fts.shape)
+        supp_fts1 = supp_fts.view(*supp_fts.shape)
+        qry_fts1 = qry_fts.view(*qry_fts.shape)
 
         ###### Compute loss ######
         align_loss = torch.zeros(1).to(self.device)
@@ -437,7 +437,7 @@ class FewShotSeg(nn.Module):
                     / n_shots
                     / n_ways
                 )
-        # print(loss)
+        print(loss)
         return loss
 
     def getPred(self, sim, thresh):
@@ -543,11 +543,11 @@ class CrossAttention2(nn.Module):
         vx = self.value(x).view(B, -1, H * W)  # B, C, H*W
         attn = self.softmax(torch.bmm(qx, ky))  # B, H*W, H*W
         outx = torch.bmm(vx, attn.permute(0, 2, 1)).view(B, C, H, W)  # B, C, H, W
-        # outx = self.mlp(outx.permute(0, 2, 3, 1)).permute(
-        #     0, 3, 1, 2
-        # )  # Apply MLP and permute back
-        outx = self.norm(outx)  # Apply normalization
+        outx = self.mlp(outx.permute(0, 2, 3, 1)).permute(
+            0, 3, 1, 2
+        )  # Apply MLP and permute back
         outx = outx + x
+        outx = self.norm(outx)  # Apply normalization
 
         # query
         qy = self.query(y).view(B, -1, H * W).permute(0, 2, 1) * scale  # B, H*W, C'
@@ -555,10 +555,14 @@ class CrossAttention2(nn.Module):
         vy = self.value(y).view(B, -1, H * W)  # B, C, H*W
         attn = self.softmax(torch.bmm(qy, kx))  # B, H*W, H*W
         outy = torch.bmm(vy, attn.permute(0, 2, 1)).view(B, C, H, W)  # B, C, H, W
-        # outy = self.mlp(outy.permute(0, 2, 3, 1)).permute(
-        #     0, 3, 1, 2
-        # )  # Apply MLP and permute back
-        outy = self.norm(outy)  # Apply normalization
+
+        # outy = outy + y
+        # outy = self.norm(outy)  # Apply normalization
+
+        outy = self.mlp(outy.permute(0, 2, 3, 1)).permute(
+            0, 3, 1, 2
+        )  # Apply MLP and permute back
         outy = outy + y
+        outy = self.norm(outy)  # Apply normalization
 
         return outx, outy
