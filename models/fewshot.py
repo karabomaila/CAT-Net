@@ -143,6 +143,9 @@ class FewShotSeg(nn.Module):
         supp_fts_reshaped, qry_fts_reshaped = self.cross_attention2(
             supp_fts_reshaped, qry_fts_reshaped
         )
+        supp_fts_reshaped, qry_fts_reshaped = self.cross_attention2(
+            supp_fts_reshaped, qry_fts_reshaped
+        )
 
         # Reshape back to original size
         supp_fts = supp_fts_reshaped.view(
