@@ -131,8 +131,8 @@ class FewShotSeg(nn.Module):
         qry_fts_reshaped = qry_fts.view(-1, *qry_fts.shape[-3:])  # (N*B) x C x H' x W'
 
         # Self attention
-        # supp_fts_reshaped = self.self_attention(supp_fts_reshaped)
-        # qry_fts_reshaped = self.self_attention(qry_fts_reshaped)
+        supp_fts_reshaped = self.self_attention(supp_fts_reshaped)
+        qry_fts_reshaped = self.self_attention(qry_fts_reshaped)
 
         supp_fts_reshaped, qry_fts_reshaped = self.cross_attention2(
             supp_fts_reshaped, qry_fts_reshaped
@@ -487,6 +487,7 @@ class SelfAttention(nn.Module):
         attn = self.softmax(torch.bmm(q, k))  # B, H*W, H*W
         out = torch.bmm(v, attn.permute(0, 2, 1)).view(B, C, H, W)  # B, C, H, W
         out = self.mlp(out.permute(0, 2, 3, 1)).permute(0, 3, 1, 2)
+        out = out + x
         return self.norm(out)
 
 
