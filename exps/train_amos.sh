@@ -7,9 +7,9 @@ export CUDA_VISIBLE_DEVICES=$GPUID1
 DATASET='AMOS'
 NWORKER=0
 RUNS=1
-ALL_EV=(2) # 5-fold cross validation (0,  1,  2,  3,  5,  6,  7,  8,  9, 10, 11, 12, 13)
+ALL_EV=(2) # 5-fold cross validation (0, 1, 2, 3, 4)
 TEST_LABEL=(10, 14)
-EXCLUDE_LABEL=None
+EXCLUDE_LABEL=(0, 1, 2, 3, 5, 6, 7, 11, 12, 13)
 USE_GT=True
 ###### Training configs ######
 NSTEP=100000
