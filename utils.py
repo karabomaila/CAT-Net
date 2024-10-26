@@ -2,12 +2,13 @@
 Utils for Dataset
 Extended from ADNet code by Hansen et al.
 """
-import random
-import torch
-import numpy as np
-import operator
-import os
+
 import logging
+import random
+
+import numpy as np
+import torch
+from scipy.ndimage import zoom
 
 
 def set_seed(seed):
@@ -20,12 +21,19 @@ def set_seed(seed):
 
 
 CLASS_LABELS = {
-    'CHAOST2': {
-        'pa_all': set(range(1, 5)),
+    "CHAOST2": {
+        "pa_all": set(range(1, 5)),
         0: set([1, 4]),  # upper_abdomen, leaving kidneies as testing classes
         1: set([2, 3]),  # lower_abdomen
     },
 }
+
+
+def resize_image_scipy(image_array, new_shape):
+    factors = [
+        new_shape[i] / image_array.shape[i] for i in range(len(image_array.shape))
+    ]
+    return zoom(image_array, factors, order=1)
 
 
 def get_bbox(fg_mask, inst_mask):
@@ -46,7 +54,7 @@ def get_bbox(fg_mask, inst_mask):
     y_max = mask_idx[0].max()
     x_min = mask_idx[1].min()
     x_max = mask_idx[1].max()
-    fg_bbox[0, y_min:y_max + 1, x_min:x_max + 1] = 1
+    fg_bbox[0, y_min : y_max + 1, x_min : x_max + 1] = 1
 
     for i in cls_ids:
         mask_idx = np.where(inst_mask[0] == i)
@@ -54,7 +62,7 @@ def get_bbox(fg_mask, inst_mask):
         y_max = min(mask_idx[0].max(), fg_mask.shape[1] - 1)
         x_min = max(mask_idx[1].min(), 0)
         x_max = min(mask_idx[1].max(), fg_mask.shape[2] - 1)
-        bg_bbox[0, y_min:y_max + 1, x_min:x_max + 1] = 0
+        bg_bbox[0, y_min : y_max + 1, x_min : x_max + 1] = 0
     return fg_bbox, bg_bbox
 
 
@@ -75,8 +83,7 @@ def to01(x_np):
     return (x_np - x_np.min()) / (x_np.max() - x_np.min() + 1e-5)
 
 
-class Scores():
-
+class Scores:
     def __init__(self):
         self.TP = 0
         self.TN = 0
@@ -112,7 +119,7 @@ class Scores():
 def set_logger(path):
     logger = logging.getLogger()
     logger.handlers = []
-    formatter = logging.Formatter('[%(levelname)] - %(name)s - %(message)s')
+    formatter = logging.Formatter("[%(levelname)] - %(name)s - %(message)s")
     logger.setLevel("INFO")
 
     # log to .txt

@@ -13,6 +13,8 @@ import torch
 import torchvision.transforms as deftfx
 from torch.utils.data import Dataset
 
+from utils import resize_image_scipy
+
 from . import image_transforms as myit
 from .dataset_specifics import *
 
@@ -165,6 +167,14 @@ class TrainDataset(Dataset):
                 os.path.join(args["data_dir"], "sabs_CT_normalized/label*")
             )
 
+        elif args["dataset"] == "AMOS":
+            self.image_dirs = glob.glob(
+                os.path.join(args["data_dir"], "amos_CT_normalized/image*")
+            )
+            self.label_dirs = glob.glob(
+                os.path.join(args["data_dir"], "amos_CT_normalized/label*")
+            )
+
         self.image_dirs = sorted(
             self.image_dirs, key=lambda x: int(x.split("_")[-1].split(".nii.gz")[0])
         )
@@ -270,8 +280,11 @@ class TrainDataset(Dataset):
 
         if self.read:
             # get image/supervoxel volume from dictionary
+            new_shape = [256, 256, 31]
             img = self.images[self.image_dirs[pat_idx]]
+            img = resize_image_scipy(img, new_shape)
             gt = self.labels[self.label_dirs[pat_idx]]
+            gt = resize_image_scipy(gt, new_shape)
             # sprvxl = self.sprvxls[self.sprvxl_dirs[pat_idx]]
             padding_mask_gt = np.zeros_like(gt)
             # padding_mask_gt_sprvxl = np.zeros_like(sprvxl)

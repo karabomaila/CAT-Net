@@ -4,6 +4,7 @@
 */figures
 */requirements.txt
 /exps_on_CHAOST2
+/exps_on_AMOS
 /data
 .env
 /runs
