@@ -4,12 +4,13 @@ GPUID1=0
 export CUDA_VISIBLE_DEVICES=$GPUID1
 
 ###### Shared configs ######
+# DATASET='CHAOST2'
 DATASET='AMOS'
 NWORKER=0
 RUNS=1
 ALL_EV=(2) # 5-fold cross validation (0, 1, 2, 3, 4)
-TEST_LABEL=(10, 14)
-EXCLUDE_LABEL=(0, 1, 2, 3, 5, 6, 7, 11, 12, 13)
+TEST_LABEL=(10 14)
+EXCLUDE_LABEL=(0 1 2 3 5 6 7 11 12 13)
 USE_GT=True
 ###### Training configs ######
 NSTEP=100000
@@ -38,8 +39,8 @@ do
   num_workers=$NWORKER \
   n_steps=$NSTEP \
   eval_fold=$EVAL_FOLD \
-  test_label=$TEST_LABEL \
-  exclude_label=$EXCLUDE_LABEL \
+  test_label=$(IFS=,; echo "${TEST_LABEL[*]}") \
+  exclude_label=$(IFS=,; echo "${EXCLUDE_LABEL[*]}") \
   use_gt=$USE_GT \
   max_iters_per_load=$MAX_ITER \
   seed=$SEED \

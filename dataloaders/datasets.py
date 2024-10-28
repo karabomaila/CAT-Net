@@ -78,7 +78,6 @@ class TestDataset(Dataset):
         idx = lbl.sum(axis=(1, 2)) > 0
         sample["image"] = torch.from_numpy(img[idx])
         sample["label"] = torch.from_numpy(lbl[idx])
-        # sample['padding_mask'] = np.zeros_like(sample['label'])
         return sample
 
     def get_support_index(self, n_shot, C):
@@ -218,9 +217,6 @@ class TrainDataset(Dataset):
                 self.labels[label_dir] = sitk.GetArrayFromImage(
                     sitk.ReadImage(label_dir)
                 )
-                # self.sprvxls[sprvxl_dir] = sitk.GetArrayFromImage(
-                #     sitk.ReadImage(sprvxl_dir)
-                # )
 
     def __len__(self):
         return self.max_iter
@@ -280,32 +276,26 @@ class TrainDataset(Dataset):
 
         if self.read:
             # get image/supervoxel volume from dictionary
-            new_shape = [256, 256, 31]
+            new_shape = [31, 256, 256]
             img = self.images[self.image_dirs[pat_idx]]
             img = resize_image_scipy(img, new_shape)
             gt = self.labels[self.label_dirs[pat_idx]]
             gt = resize_image_scipy(gt, new_shape)
-            # sprvxl = self.sprvxls[self.sprvxl_dirs[pat_idx]]
-            padding_mask_gt = np.zeros_like(gt)
-            # padding_mask_gt_sprvxl = np.zeros_like(sprvxl)
         else:
             # read image/supervoxel volume into memory
             img = sitk.GetArrayFromImage(sitk.ReadImage(self.image_dirs[pat_idx]))
             gt = sitk.GetArrayFromImage(sitk.ReadImage(self.label_dirs[pat_idx]))
-            sprvxl = sitk.GetArrayFromImage(sitk.ReadImage(self.sprvxl_dirs[pat_idx]))
-            padding_mask_gt = np.zeros_like(gt)
-            padding_mask_gt_sprvxl = np.zeros_like(sprvxl)
 
-        if self.exclude_label is not None:  # identify the slices containing test labels
-            idx = np.arange(gt.shape[0])
-            exclude_idx = np.full(gt.shape[0], True, dtype=bool)
-            for i in range(len(self.exclude_label)):
-                exclude_idx = exclude_idx & (
-                    np.sum(gt == self.exclude_label[i], axis=(1, 2)) > 0
-                )
-            exclude_idx = idx[exclude_idx]
-        else:
-            exclude_idx = []
+        # if self.exclude_label is not None:  # identify the slices containing test labels
+        #     idx = np.arange(gt.shape[0])
+        #     exclude_idx = np.full(gt.shape[0], True, dtype=bool)
+        #     for i in range(len(self.exclude_label)):
+        #         exclude_idx = exclude_idx & (
+        #             np.sum(gt == self.exclude_label[i], axis=(1, 2)) > 0
+        #         )
+        #     exclude_idx = idx[exclude_idx]
+        # else:
+        exclude_idx = []
 
         # normalize
         img = (img - img.mean()) / img.std()
@@ -313,14 +303,15 @@ class TrainDataset(Dataset):
         # chose training label
         if self.use_gt:
             lbl = gt.copy()
-        # else:
-        #     lbl = sprvxl.copy()
 
         # sample class(es) (gt/supervoxel)
         unique = list(np.unique(lbl))
+        for i in range(len(unique)):
+            unique[i] = int(unique[i])
         unique.remove(0)
         if self.use_gt:
             unique = list(set(unique) - set(self.test_label))
+            unique = list(set(unique) - set(self.exclude_label))
 
         size = 0
         while size < self.min_size:
@@ -332,6 +323,7 @@ class TrainDataset(Dataset):
                 sli_idx = np.sum(lbl == cls_idx, axis=(1, 2)) > 0
                 idx = np.arange(lbl.shape[0])
                 sli_idx = idx[sli_idx]
+
                 sli_idx = list(
                     set(sli_idx) - set(np.intersect1d(sli_idx, exclude_idx))
                 )  # remove slices containing test labels
@@ -380,8 +372,10 @@ class TrainDataset(Dataset):
         sup_img = img[sample[: self.n_shot * self.n_way]][
             None,
         ]  # n_way * (n_shot * C) * H * W
+
         sup_img = np.stack((sup_img, sup_img, sup_img), axis=2)
         qry_img = img[sample[self.n_shot * self.n_way :]]  # n_qry * C * H * W
+        # print(qry_img.shape)
         qry_img = np.stack((qry_img, qry_img, qry_img), axis=1)
         padding_mask = np.zeros_like(qry_lbl)
         s_padding_mask = np.zeros_like(sup_lbl)
@@ -409,4 +403,3 @@ class TrainDataset(Dataset):
             "s_padding_mask": s_padding_mask,
         }
         return sample
-        # return sup_img, sup_lbl, qry_img, qry_lbl, padding_mask, s_padding_mask
