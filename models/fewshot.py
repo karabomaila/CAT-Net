@@ -281,10 +281,9 @@ class FewShotSeg(nn.Module):
         return (
             output,
             align_loss / batch_size,
-        )  # (t_loss_scaler * self.t_loss)
+        )
 
     def updatePrototype(self, fts, prototype, pred, update_iters, epi):
-        prototype_0 = torch.stack(prototype, dim=0)
         prototype_ = Parameter(torch.stack(prototype, dim=0))
 
         optimizer = torch.optim.Adam([prototype_], lr=0.01)
