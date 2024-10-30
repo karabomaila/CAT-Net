@@ -47,7 +47,7 @@ def cfg():
         n_sv = 1000
     else:
         n_sv = 5000
-    min_size = 200
+    min_size = 130
     max_slices = 3
     use_gt = False  # True - use ground truth as training label, False - use supervoxel as training label
     eval_fold = 0  # (0-4) for 5-fold cross-validation
