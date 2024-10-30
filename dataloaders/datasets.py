@@ -34,6 +34,13 @@ class TestDataset(Dataset):
             self.image_dirs = glob.glob(
                 os.path.join(args["data_dir"], "sabs_CT_normalized/image*")
             )
+        elif args["dataset"] == "AMOS":
+            self.image_dirs = glob.glob(
+                os.path.join(args["data_dir"], "amos_CT_normalized/image*")
+            )
+            self.label_dirs = glob.glob(
+                os.path.join(args["data_dir"], "amos_CT_normalized/label*")
+            )
 
         self.image_dirs = sorted(
             self.image_dirs, key=lambda x: int(x.split("_")[-1].split(".nii.gz")[0])
@@ -59,6 +66,9 @@ class TestDataset(Dataset):
     def __getitem__(self, idx):
         img_path = self.image_dirs[idx]
         img = sitk.GetArrayFromImage(sitk.ReadImage(img_path))
+        new_shape = [31, 256, 256]
+        img = resize_image_scipy(img, new_shape)
+
         img = (img - img.mean()) / img.std()
         img = np.stack(3 * [img], axis=1)
 
@@ -67,6 +77,7 @@ class TestDataset(Dataset):
                 img_path.split("image_")[0] + "label_" + img_path.split("image_")[-1]
             )
         )
+        lbl = resize_image_scipy(lbl, new_shape)
         lbl[lbl == 200] = 1
         lbl[lbl == 500] = 2
         lbl[lbl == 600] = 3
@@ -99,6 +110,9 @@ class TestDataset(Dataset):
 
         img_path = self.support_dir
         img = sitk.GetArrayFromImage(sitk.ReadImage(img_path))
+        new_shape = [31, 256, 256]
+        img = resize_image_scipy(img, new_shape)
+
         img = (img - img.mean()) / img.std()
         img = np.stack(3 * [img], axis=1)
 
@@ -107,6 +121,7 @@ class TestDataset(Dataset):
                 img_path.split("image_")[0] + "label_" + img_path.split("image_")[-1]
             )
         )
+        lbl = resize_image_scipy(lbl, new_shape)
         lbl[lbl == 200] = 1
         lbl[lbl == 500] = 2
         lbl[lbl == 600] = 3
@@ -276,15 +291,16 @@ class TrainDataset(Dataset):
 
         if self.read:
             # get image/supervoxel volume from dictionary
-            new_shape = [31, 256, 256]
             img = self.images[self.image_dirs[pat_idx]]
-            img = resize_image_scipy(img, new_shape)
             gt = self.labels[self.label_dirs[pat_idx]]
-            gt = resize_image_scipy(gt, new_shape)
         else:
             # read image/supervoxel volume into memory
             img = sitk.GetArrayFromImage(sitk.ReadImage(self.image_dirs[pat_idx]))
             gt = sitk.GetArrayFromImage(sitk.ReadImage(self.label_dirs[pat_idx]))
+
+        new_shape = [31, 256, 256]
+        img = resize_image_scipy(img, new_shape)
+        gt = resize_image_scipy(gt, new_shape)
 
         # if self.exclude_label is not None:  # identify the slices containing test labels
         #     idx = np.arange(gt.shape[0])
