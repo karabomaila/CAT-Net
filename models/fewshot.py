@@ -532,9 +532,9 @@ class CrossAttention(nn.Module):
 
         qx = self.query(x).view(B, -1, H * W).permute(0, 2, 1) * scale  # B, H*W, C'
         ky = self.key(y).view(B, -1, H * W)  # B, C', H*W
-        vy = self.value(y).view(B, -1, H * W)  # B, C, H*W
+        vx = self.value(x).view(B, -1, H * W)  # B, C, H*W
         attn = self.softmax(torch.bmm(qx, ky))  # B, H*W, H*W
-        outx = torch.bmm(vy, attn.permute(0, 2, 1)).view(B, C, H, W)  # B, C, H, W
+        outx = torch.bmm(vx, attn.permute(0, 2, 1)).view(B, C, H, W)  # B, C, H, W
         outx = self.mlp(outx.permute(0, 2, 3, 1)).permute(
             0, 3, 1, 2
         )  # Apply MLP and permute back
@@ -543,9 +543,9 @@ class CrossAttention(nn.Module):
 
         qy = self.query(y).view(B, -1, H * W).permute(0, 2, 1) * scale  # B, H*W, C'
         kx = self.key(x).view(B, -1, H * W)  # B, C', H*W
-        vx = self.value(x).view(B, -1, H * W)  # B, C, H*W
+        vy = self.value(y).view(B, -1, H * W)  # B, C, H*W
         attn = self.softmax(torch.bmm(qy, kx))  # B, H*W, H*W
-        outy = torch.bmm(vx, attn.permute(0, 2, 1)).view(B, C, H, W)  # B, C, H, W
+        outy = torch.bmm(vy, attn.permute(0, 2, 1)).view(B, C, H, W)  # B, C, H, W
         outy = self.mlp(outy.permute(0, 2, 3, 1)).permute(
             0, 3, 1, 2
         )  # Apply MLP and permute back
