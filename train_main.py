@@ -139,7 +139,7 @@ def main(_run, _config, _log):
 
             # Compute outputs and losses.
             query_pred, align_loss = model(
-                support_images, support_fg_mask, query_images, train=True
+                support_images, support_fg_mask, query_images, train=True, n_cmat=5
             )
 
             query_loss = criterion(

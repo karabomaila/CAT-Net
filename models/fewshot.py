@@ -77,7 +77,14 @@ class FewShotSeg(nn.Module):
         return corr_query_mask
 
     def forward(
-        self, supp_imgs, fore_mask, qry_imgs, train=False, t_loss_scaler=1, n_iters=0
+        self,
+        supp_imgs,
+        fore_mask,
+        qry_imgs,
+        train=False,
+        t_loss_scaler=1,
+        n_cmat=0,
+        n_iters=0,
     ):
         """
         Args:
@@ -101,8 +108,8 @@ class FewShotSeg(nn.Module):
         )  # for now only one-way, because not every shot has multiple sub-images
         assert self.n_queries == 1
         n_queries = len(qry_imgs)
-        batch_size_q = qry_imgs[0].shape[0]
-        batch_size = supp_imgs[0][0].shape[0]
+        self.batch_size_q = qry_imgs[0].shape[0]
+        self.batch_size = supp_imgs[0][0].shape[0]
         img_size = supp_imgs[0][0].shape[-2:]
 
         # ###### Extract features ######
@@ -116,13 +123,44 @@ class FewShotSeg(nn.Module):
         img_fts = self.encoder(imgs_concat, low_level=False)
 
         fts_size = img_fts.shape[-2:]
-        supp_fts = img_fts[: n_ways * self.n_shots * batch_size].view(
-            n_ways, self.n_shots, batch_size, -1, *fts_size
+        supp_fts = img_fts[: n_ways * self.n_shots * self.batch_size].view(
+            n_ways, self.n_shots, self.batch_size, -1, *fts_size
         )  # Wa x Sh x B x C x H' x W'
-        qry_fts = img_fts[n_ways * self.n_shots * batch_size :].view(
-            n_queries, batch_size_q, -1, *fts_size
+        qry_fts = img_fts[n_ways * self.n_shots * self.batch_size :].view(
+            n_queries, self.batch_size_q, -1, *fts_size
         )  # N x B x C x H' x W'
 
+        align_loss = torch.zeros(1).to(self.device)
+        for _ in range(n_cmat):
+            supp_fts, qry_fts, query_mask, align_loss2 = self.CMAT(
+                supp_fts,
+                fore_mask,
+                qry_fts,
+                # query_mask,
+                img_size,
+                fts_size,
+                train,
+                n_iters,
+            )
+            align_loss += align_loss2
+        align_loss /= n_cmat
+
+        return (
+            query_mask,
+            align_loss / self.batch_size,
+        )
+
+    def CMAT(
+        self,
+        supp_fts,
+        fore_mask,
+        qry_fts,
+        # query_mask,
+        img_size,
+        fts_size,
+        train,
+        n_iters,
+    ):
         # Reshape for self_attention
         supp_fts_reshaped = supp_fts.view(
             -1, *supp_fts.shape[-3:]
@@ -135,10 +173,10 @@ class FewShotSeg(nn.Module):
 
         # Reshape back to original size
         supp_fts = supp_fts_reshaped.view(
-            n_ways, self.n_shots, batch_size, -1, *fts_size
+            self.n_ways, self.n_shots, self.batch_size, -1, *fts_size
         )  # Wa x Sh x B x C x H' x W'
         qry_fts = qry_fts_reshaped.view(
-            n_queries, batch_size_q, -1, *fts_size
+            self.n_queries, self.batch_size_q, -1, *fts_size
         )  # N x B x C x H' x W'
 
         fore_mask = torch.stack(
@@ -149,19 +187,18 @@ class FewShotSeg(nn.Module):
         qry_fts1 = qry_fts.view(
             -1, qry_fts.shape[2], *fts_size
         )  # (N * B) x C x H' x W'
-        supp_fts1 = supp_fts.view(batch_size, -1, *fts_size)  # B x C x H' x W'
+        supp_fts1 = supp_fts.view(self.batch_size, -1, *fts_size)  # B x C x H' x W'
         fore_mask1 = fore_mask[0][0]  # B x H' x W'
         corr_query_mask = self.generate_prior(qry_fts1, supp_fts1, fore_mask1, (32, 32))
 
         # Reshape corr_query_mask from (N * B) x 1 x H' x W' to N x B x 1 x H' x W'
-        corr_query_mask = corr_query_mask.view(n_queries, batch_size_q, 1, *fts_size)
-
+        query_mask = corr_query_mask.view(
+            self.n_queries, self.batch_size_q, 1, *fts_size
+        )
         # Fusion prior and query features
-        qry_fts = torch.cat(
-            [qry_fts, corr_query_mask], dim=2
-        )  # N x B x (C + 1) x H' x W'
+        qry_fts = torch.cat([qry_fts, query_mask], dim=2)  # N x B x (C + 1) x H' x W'
         qry_fts = self.conv_fusion(qry_fts.view(-1, qry_fts.shape[2], *fts_size)).view(
-            n_queries, batch_size_q, -1, *fts_size
+            self.n_queries, self.batch_size_q, -1, *fts_size
         )
 
         supp_fts_reshaped = supp_fts.view(-1, *supp_fts.shape[3:])
@@ -179,7 +216,7 @@ class FewShotSeg(nn.Module):
         ###### Compute loss ######
         align_loss = torch.zeros(1).to(self.device)
         outputs = []
-        for epi in range(batch_size):
+        for epi in range(self.batch_size):
             ###### Extract prototypes ######
             supp_fts_ = [
                 [
@@ -188,7 +225,7 @@ class FewShotSeg(nn.Module):
                     )
                     for shot in range(self.n_shots)
                 ]
-                for way in range(n_ways)
+                for way in range(self.n_ways)
             ]
 
             fg_prototypes = self.getPrototype(supp_fts_)
@@ -197,7 +234,7 @@ class FewShotSeg(nn.Module):
             ]
 
             ###### Get threshold #######
-            self.thresh_pred = [self.t for _ in range(n_ways)]
+            self.thresh_pred = [self.t for _ in range(self.n_ways)]
             self.t_loss = self.t / self.scaler
 
             ###### Get predictions #######
@@ -278,10 +315,8 @@ class FewShotSeg(nn.Module):
 
         output = torch.stack(outputs, dim=1)  # N x B x (1 + Wa) x H x W
         output = output.view(-1, *output.shape[2:])
-        return (
-            output,
-            align_loss / batch_size,
-        )
+
+        return supp_fts, qry_fts, output, align_loss
 
     def updatePrototype(self, fts, prototype, pred, update_iters, epi):
         prototype_ = Parameter(torch.stack(prototype, dim=0))
