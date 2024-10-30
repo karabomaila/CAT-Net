@@ -512,6 +512,7 @@ class SelfAttention(nn.Module):
         attn = self.softmax(torch.bmm(q, k))  # B, H*W, H*W
         out = torch.bmm(v, attn.permute(0, 2, 1)).view(B, C, H, W)  # B, C, H, W
         out = self.mlp(out.permute(0, 2, 3, 1)).permute(0, 3, 1, 2)
+        out = out + x
         return self.norm(out)
 
 
@@ -537,6 +538,7 @@ class CrossAttention(nn.Module):
         outx = self.mlp(outx.permute(0, 2, 3, 1)).permute(
             0, 3, 1, 2
         )  # Apply MLP and permute back
+        outx = outx + x
         outx = self.norm(outx)  # Apply normalization
 
         qy = self.query(y).view(B, -1, H * W).permute(0, 2, 1) * scale  # B, H*W, C'
@@ -547,6 +549,7 @@ class CrossAttention(nn.Module):
         outy = self.mlp(outy.permute(0, 2, 3, 1)).permute(
             0, 3, 1, 2
         )  # Apply MLP and permute back
+        outy = outy + y
         outy = self.norm(outy)  # Apply normalization
 
         return outx, outy
