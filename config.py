@@ -40,14 +40,14 @@ def cfg():
     mode = "train"
 
     ## dataset
-    dataset = "AMOS"  # i.e. abdominal MRI - 'CHAOST2'; cardiac MRI - CMR
+    dataset = "CHAOST2"  # i.e. abdominal MRI - 'CHAOST2'; cardiac MRI - CMR
     exclude_label = None  # None, for not excluding test labels;
     # 1 for Liver, 2 for RK, 3 for LK, 4 for Spleen in 'CHAOST2'
     if dataset == "CMR":
         n_sv = 1000
     else:
         n_sv = 5000
-    min_size = 130
+    min_size = 200
     max_slices = 3
     use_gt = False  # True - use ground truth as training label, False - use supervoxel as training label
     eval_fold = 0  # (0-4) for 5-fold cross-validation
@@ -94,7 +94,7 @@ def cfg():
 
     path = {
         "log_dir": "./runs",
-        "CHAOST2": {"data_dir": "./data/CHAOST2"},
+        "CHAOST2": {"data_dir": "./data/CHAOST2/niis/T2SPIR"},
         "SABS": {"data_dir": "./data/SABS"},
         "CMR": {"data_dir": "./data/CMR"},
         "AMOS": {"data_dir": "./data/amos/CT"},
