@@ -4,8 +4,10 @@ For evaluation
 Extended from ADNet code by Hansen et al.
 """
 
+import os
 import shutil
 
+import numpy as np
 import SimpleITK as sitk
 import torch.backends.cudnn as cudnn
 import torch.optim
@@ -49,10 +51,6 @@ def main(_run, _config, _log):
         torch.cuda.manual_seed_all(_config["seed"])
         cudnn.deterministic = True
 
-    # Enable cuDNN benchmark mode to select the fastest convolution algorithm.
-    # cudnn.enabled = True
-    # cudnn.benchmark = True
-    # torch.cuda.set_device(device=_config["gpu_id"])
     torch.set_num_threads(1)
 
     _log.info("Create model...")
@@ -62,7 +60,8 @@ def main(_run, _config, _log):
 
     _log.info("Load data...")
     data_config = {
-        "data_dir": "./data/CHAOST2/niis/T2SPIR",
+        # "data_dir": "./data/CHAOST2/niis/T2SPIR",
+        "data_dir": "./data/amos/CT",
         "dataset": _config["dataset"],
         "n_shot": _config["n_shot"],
         "n_way": _config["n_way"],
@@ -92,6 +91,8 @@ def main(_run, _config, _log):
     class_iou = {}
 
     _log.info("Starting validation...")
+    # _log.info(labels)
+    # assert False
     for label_val, label_name in labels.items():
         # Skip BG class.
         if label_name == "BG":
@@ -149,13 +150,20 @@ def main(_run, _config, _log):
                             [support_fg_mask_s],
                             [query_image_s[[i]]],
                             train=False,
+                            n_cmat=5,
                             n_iters=_config["n_iters"],
                         )  # C x 2 x H x W
                         query_pred_s.append(_pred_s)
-                    query_pred_s = torch.cat(query_pred_s, dim=0)
+                    try:
+                        query_pred_s = torch.cat(query_pred_s, dim=0)
+                    except Exception:
+                        _log.info(f"Error predicting the image with id: {query_id}")
+                        continue
                     query_pred_s = query_pred_s.argmax(dim=1).cpu()  # C x H x W
                     query_pred[idx_[sub_chunck] : idx_[sub_chunck + 1]] = query_pred_s
 
+                if query_pred.shape == torch.Size([0, 256, 256]):
+                    continue
                 # Record scores.
                 scores.record(query_pred, query_label)
 

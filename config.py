@@ -51,7 +51,7 @@ def cfg():
     max_slices = 3
     use_gt = False  # True - use ground truth as training label, False - use supervoxel as training label
     eval_fold = 0  # (0-4) for 5-fold cross-validation
-    test_label = [1, 4]  # for evaluation
+    test_label = [10, 14]  # for evaluation
     supp_idx = 0  # choose which case as the support set for evaluation, (0-4) for 'CHAOST2', (0-7) for 'CMR'
     n_part = 3  # for evaluation, i.e. 3 chunks
 
