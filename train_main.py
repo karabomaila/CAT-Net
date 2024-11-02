@@ -80,8 +80,7 @@ def main(_run, _config, _log):
 
     _log.info("Load data...")
     data_config = {
-        # "data_dir": "./data/CHAOST2/niis/T2SPIR",
-        "data_dir": "./data/amos/CT",
+         "data_dir": _config['path'][_config['dataset']]['data_dir'],
         "dataset": _config["dataset"],
         "n_shot": _config["n_shot"],
         "n_way": _config["n_way"],
