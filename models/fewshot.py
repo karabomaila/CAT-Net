@@ -206,7 +206,7 @@ class FewShotSeg(nn.Module):
 
         # Pass through CrossAttention
         supp_fts_out, qry_fts_out = self.cross_attention(
-            supp_fts_reshaped, qry_fts_reshaped
+            supp_fts_reshaped, qry_fts_reshaped, fore_mask1, query_mask[0][0]
         )
 
         # Reshape back to original shape
@@ -526,7 +526,7 @@ class CrossAttention(nn.Module):
         self.mlp = nn.Sequential(nn.Linear(dim, dim), nn.ReLU(), nn.Linear(dim, dim))
         self.norm = nn.LayerNorm([256, 32, 32])
 
-    def forward(self, x, y):
+    def forward(self, x, y, s_mask=None, q_mask=None):
         B, C, H, W = x.shape
         scale = (C // 8) ** -0.5
 
@@ -535,10 +535,21 @@ class CrossAttention(nn.Module):
         vx = self.value(x).view(B, -1, H * W)  # B, C, H*W
         attn = self.softmax(torch.bmm(qx, ky))  # B, H*W, H*W
         outx = torch.bmm(vx, attn.permute(0, 2, 1)).view(B, C, H, W)  # B, C, H, W
-        outx = self.mlp(outx.permute(0, 2, 3, 1)).permute(
+
+        if s_mask is not None:
+            mask = s_mask.unsqueeze(0)
+            mask = F.interpolate(
+                mask,
+                size=(H, W),
+                mode="bilinear",
+                align_corners=True,
+            )
+            outx = outx * mask
+
+        outx2 = self.mlp(outx.permute(0, 2, 3, 1)).permute(
             0, 3, 1, 2
         )  # Apply MLP and permute back
-        outx = outx + x
+        outx = outx + outx2
         outx = self.norm(outx)  # Apply normalization
 
         qy = self.query(y).view(B, -1, H * W).permute(0, 2, 1) * scale  # B, H*W, C'
@@ -546,10 +557,21 @@ class CrossAttention(nn.Module):
         vy = self.value(y).view(B, -1, H * W)  # B, C, H*W
         attn = self.softmax(torch.bmm(qy, kx))  # B, H*W, H*W
         outy = torch.bmm(vy, attn.permute(0, 2, 1)).view(B, C, H, W)  # B, C, H, W
-        outy = self.mlp(outy.permute(0, 2, 3, 1)).permute(
+
+        if q_mask is not None:
+            mask = q_mask.unsqueeze(0)
+            mask = F.interpolate(
+                mask,
+                size=(H, W),
+                mode="bilinear",
+                align_corners=True,
+            )
+            outy = outy * mask
+
+        outy2 = self.mlp(outy.permute(0, 2, 3, 1)).permute(
             0, 3, 1, 2
         )  # Apply MLP and permute back
-        outy = outy + y
+        outy = outy + outy2
         outy = self.norm(outy)  # Apply normalization
 
         return outx, outy
