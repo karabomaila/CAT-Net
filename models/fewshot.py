@@ -546,6 +546,9 @@ class CrossAttention(nn.Module):
             )
             outx = outx * mask
 
+        outx = x + outx
+        outx = self.norm(outx)  # Apply normalization
+
         outx2 = self.mlp(outx.permute(0, 2, 3, 1)).permute(
             0, 3, 1, 2
         )  # Apply MLP and permute back
@@ -567,6 +570,9 @@ class CrossAttention(nn.Module):
                 align_corners=True,
             )
             outy = outy * mask
+
+        outy = y + outy
+        outy = self.norm(outy)  # Apply normalization
 
         outy2 = self.mlp(outy.permute(0, 2, 3, 1)).permute(
             0, 3, 1, 2
