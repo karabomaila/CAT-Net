@@ -298,7 +298,7 @@ class TrainDataset(Dataset):
             img = sitk.GetArrayFromImage(sitk.ReadImage(self.image_dirs[pat_idx]))
             gt = sitk.GetArrayFromImage(sitk.ReadImage(self.label_dirs[pat_idx]))
 
-        new_shape = [31, 256, 256]
+        new_shape = [img.shape[0], 256, 256]
         img = resize_image_scipy(img, new_shape)
         gt = resize_image_scipy(gt, new_shape)
 
