@@ -226,12 +226,15 @@ class TrainDataset(Dataset):
             self.labels = {}
             self.sprvxls = {}
             for image_dir, label_dir in zip(self.image_dirs, self.label_dirs):
-                self.images[image_dir] = sitk.GetArrayFromImage(
+                img = sitk.GetArrayFromImage(
                     sitk.ReadImage(image_dir)
                 )
-                self.labels[label_dir] = sitk.GetArrayFromImage(
+                gt  = sitk.GetArrayFromImage(
                     sitk.ReadImage(label_dir)
                 )
+                new_shape = [img.shape[0], 256, 256]
+                self.images[image_dir] = resize_image_scipy(img, new_shape)
+                self.labels[label_dir] = resize_image_scipy(gt, new_shape)
 
     def __len__(self):
         return self.max_iter
@@ -298,19 +301,10 @@ class TrainDataset(Dataset):
             img = sitk.GetArrayFromImage(sitk.ReadImage(self.image_dirs[pat_idx]))
             gt = sitk.GetArrayFromImage(sitk.ReadImage(self.label_dirs[pat_idx]))
 
-        new_shape = [31, 256, 256]
-        img = resize_image_scipy(img, new_shape)
-        gt = resize_image_scipy(gt, new_shape)
+            new_shape = [img.shape[0], 256, 256]
+            img = resize_image_scipy(img, new_shape)
+            gt = resize_image_scipy(gt, new_shape)
 
-        # if self.exclude_label is not None:  # identify the slices containing test labels
-        #     idx = np.arange(gt.shape[0])
-        #     exclude_idx = np.full(gt.shape[0], True, dtype=bool)
-        #     for i in range(len(self.exclude_label)):
-        #         exclude_idx = exclude_idx & (
-        #             np.sum(gt == self.exclude_label[i], axis=(1, 2)) > 0
-        #         )
-        #     exclude_idx = idx[exclude_idx]
-        # else:
         exclude_idx = []
 
         # normalize
