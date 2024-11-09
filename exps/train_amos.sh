@@ -1,10 +1,9 @@
 #!/bin/bash
-# train a model to segment abdominal MRI (T2 fold of CHAOS challenge)
+# train a model to segment abdominal CT
 GPUID1=0
 export CUDA_VISIBLE_DEVICES=$GPUID1
 
 ###### Shared configs ######
-# DATASET='CHAOST2'
 DATASET='AMOS'
 NWORKER=0
 RUNS=1
@@ -13,7 +12,7 @@ TEST_LABEL=(10 14)
 EXCLUDE_LABEL=(0 1 2 3 5 6 7 11 12 13)
 USE_GT=True
 ###### Training configs ######
-NSTEP=100000
+NSTEP=200000
 DECAY=0.98
 
 MAX_ITER=1000 # defines the size of an epoch
