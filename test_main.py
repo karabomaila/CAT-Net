@@ -139,9 +139,11 @@ def main(_run, _config, _log):
                 for sub_chunck in range(_config["n_part"]):
                     support_image_s = [support_image[sub_chunck]]  # 1 x 3 x H x W
                     support_fg_mask_s = [support_fg_mask[sub_chunck]]  # 1 x H x W
+
                     query_image_s = query_image[0][
                         idx_[sub_chunck] : idx_[sub_chunck + 1]
                     ]  # C' x 3 x H x W
+
                     query_pred_s = []
                     for i in range(query_image_s.shape[0]):
                         _pred_s, _ = model(
@@ -152,6 +154,7 @@ def main(_run, _config, _log):
                             n_cmat=5,
                             n_iters=_config["n_iters"],
                         )  # C x 2 x H x W
+
                         query_pred_s.append(_pred_s)
                     try:
                         query_pred_s = torch.cat(query_pred_s, dim=0)
