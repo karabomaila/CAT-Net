@@ -31,7 +31,7 @@ The pre-processing code was taken from [Ouyang et al.](https://github.com/cheng-
 1. Update the configurations in the 'train_amos.sh' and 'config.py' files.
 2. Run the following command to train the model:
 ```
-./exps/train_Abd.sh
+./exps/train_amos.sh
 ```
 
 ### Testing
