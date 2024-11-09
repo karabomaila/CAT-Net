@@ -1,24 +1,24 @@
 #!/bin/bash
-# test a model to segment abdominal/cardiac MRI
+# test a model to segment abdominal CT/cardiac MRI
 GPUID1=0
 export CUDA_VISIBLE_DEVICES=$GPUID1
 
 ###### Shared configs ######
-DATASET='CHAOST2'
+DATASET='AMOS'
 NWORKER=0
 RUNS=1
 ALL_EV=(0 1 2 3 4) # 5-fold cross validation (0, 1, 2, 3, 4)
-TEST_LABEL=[1,4]
+TEST_LABEL=(4 5 7 8 9 10 11 12 14)
 ###### Training configs ######
 NSTEP=30000
 DECAY=0.98
 
 MAX_ITER=1000 # defines the size of an epoch
 SNAPSHOT_INTERVAL=10000 # interval for saving snapshot
-SEED=2021
+SEED=2024
 
 N_PART=3 # defines the number of chunks for evaluation
-ALL_SUPP=(3) # CHAOST2: 0-4, CMR: 0-7
+ALL_SUPP=(2) # CHAOST2: 0-4, CMR: 0-7
 echo ========================================================================
 
 for EVAL_FOLD in "${ALL_EV[@]}"
@@ -34,8 +34,7 @@ do
   for SUPP_IDX in "${ALL_SUPP[@]}"
   do
     # RELOAD_PATH='please feed the absolute path to the trained weights here' # path to the reloaded model
-    # RELOAD_MODEL_PATH="./exps_on_CHAOST2/CATNet_train_CHAOST2_cv${EVAL_FOLD}/1/snapshots/100000.pth"
-    RELOAD_MODEL_PATH="./exps_on_CHAOST2/CATNet_train_CHAOST2_cv2/27/snapshots/600.pth"
+    RELOAD_MODEL_PATH="./exps_on_AMOS/CATNet_train_AMOS_cv2/2/snapshots/200000.pth"
     .venv/bin/python test_main.py with \
     mode="test" \
     dataset=$DATASET \
@@ -44,7 +43,7 @@ do
     eval_fold=$EVAL_FOLD \
     max_iters_per_load=$MAX_ITER \
     supp_idx=$SUPP_IDX \
-    test_label=$TEST_LABEL \
+    test_label=$(IFS=,; echo "${TEST_LABEL[*]}") \
     seed=$SEED \
     n_part=$N_PART \
     reload_model_path=$RELOAD_MODEL_PATH \
@@ -53,4 +52,3 @@ do
     path.log_dir=$LOGDIR
     done
 done
-
