@@ -83,8 +83,8 @@ class FewShotSeg(nn.Module):
         qry_imgs,
         train=False,
         t_loss_scaler=1,
-        n_cmat=0,
-        n_iters=0,
+        n_cmat=1,
+        n_iters=1,
     ):
         """
         Args:
